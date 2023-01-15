@@ -1,0 +1,107 @@
+
+1、查询"01"课程比"02"课程成绩高的学生的信息及课程分数
+
+select stu.*, s01.s_score as score_01, s02.s_score as score_02
+from student stu,
+(select s_id, c_id, s_score from score where c_id=01) s01,
+(select s_id, c_id, s_score from score where c_id=02) s02
+where s01.s_id = s02.s_id and s01.s_score > s02.s_score and stu.s_id = s01.s_id;
+
+
+2、查询"01"课程比"02"课程成绩低的学生的信息及课程分数
+
+select stu.*, s01.s_score as score_01, s02.s_score as score_02
+from student stu,
+(select s_id, c_id, s_score from score where c_id=01) s01,
+(select s_id, c_id, s_score from score where c_id=02) s02
+where s01.s_id = s02.s_id and s01.s_score < s02.s_score and stu.s_id = s01.s_id;
+
+3、查询平均成绩大于等于60分的同学的学生编号和学生姓名和平均成绩
+
+select student.s_id, student.s_name, avg(score.s_score) as avg_score
+from student, score
+where student.s_id = score.s_id
+group by student.s_id, student.s_name
+having avg_score >= 60;
+
+4、查询平均成绩小于60分的同学的学生编号和学生姓名和平均成绩(包括有成绩的和无成绩的)
+
+select student.s_id, student.s_name, avg(score.s_score) as avg_score
+from student left join score
+on student.s_id = score.s_id
+group by student.s_id, student.s_name
+having avg_score < 60 or avg_score is null;
+
+5、查询所有同学的学生编号、学生姓名、选课总数、所有课程的总成绩
+
+select student.s_id, student.s_name, count(score.c_id) as score_count, sum(score.s_score) as score_sum
+from student left join score
+on student.s_id = score.s_id
+group by student.s_id, student.s_name;
+
+6、查询"李"姓老师的数量
+
+select count(t_name) from teacher where t_name like '李%';
+
+7、查询学过"张三"老师授课的同学的信息
+
+select * from student where s_id in 
+(select s_id from score, course, teacher
+where t_name = '张三' 
+and course.t_id = teacher.t_id 
+and score.c_id = course.c_id);
+
+8、查询没学过"张三"老师授课的同学的信息
+
+select * from student where s_id not in 
+(select s_id from score, course, teacher
+where t_name = '张三' 
+and course.t_id = teacher.t_id 
+and score.c_id = course.c_id);
+
+9、查询学过编号为"01"并且也学过编号为"02"的课程的同学的信息
+
+select * from student where s_id in 
+(select s_id from score, course
+where course.c_id = score.c_id and course.c_id in (01, 02));
+
+10、查询学过编号为"01"但是没有学过编号为"02"的课程的同学的信息
+
+select * from student where s_id in 
+(select s_id from score where c_id = 01)
+and s_id not in (select s_id from score where c_id = 02)
+
+11、查询没有学全所有课程的同学的信息
+
+select * from student where s_id in
+(select s_id from score group by s_id having count(c_id) < 4);
+
+12、查询至少有一门课与学号为"01"的同学所学相同的同学的信息
+
+select * from student where s_id in
+(select s_id from score where c_id in 
+(select c_id from score where s_id = 01) 
+and s_id != 01);
+
+13、查询和"01"号的同学学习的课程完全相同的其他同学的信息
+select * from student where s_id in 
+(
+select s_id from score
+where c_id in (select c_id from score where s_id = 01) and s_id != 01
+having count(c_id) = 3
+);
+
+14、查询没学过"张三"老师讲授的任一门课程的学生姓名
+
+select s_name from student where s_id not in 
+(select s_id from score, course, teacher 
+where teacher.t_name = '张三' 
+and course.t_id = teacher.t_id
+and course.c_id = score.c_id);
+
+15、查询两门及其以上不及格课程的同学的学号，姓名及其平均成绩
+
+select s_id, s_name, avg(s_score) from student, score
+where student.s_id = score.s_id and score.s_score < 60
+group by student.s_id
+having count(student.s_id) > 2;
